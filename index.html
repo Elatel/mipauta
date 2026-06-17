@@ -213,6 +213,30 @@
   .catdot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
   .empty{color:var(--ink2);font-size:13px;text-align:center;padding:22px 10px}
   .liveextra{text-align:center;font-size:12.5px;color:var(--ink2);margin-top:8px;font-weight:600}
+  .sportcard{margin-top:12px}
+  .sc-set{width:100%;border:1.5px dashed var(--ciruela);background:rgba(138,79,109,.08);color:#7a3f5d;border-radius:16px;padding:13px;font-weight:700;font-size:14px;font-family:inherit;cursor:pointer}
+  .sc-done{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow)}
+  .sc-t{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);font-weight:700}
+  .sc-v{font-family:"Fraunces",serif;font-weight:700;font-size:16px;margin-top:2px}
+  .sc-btn{border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink2);flex-shrink:0}
+  .weekbtn{width:100%;border:0;border-radius:16px;padding:13px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;margin-top:14px;background:var(--ink);color:#fff}
+  .addmeal{width:100%;border:1.5px dashed var(--line);background:transparent;color:var(--ink2);border-radius:16px;padding:13px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;margin-top:12px}
+  .tagx{font-size:10px;background:#efe3cc;color:#7a6a4e;padding:2px 7px;border-radius:20px;font-weight:700;font-family:"DM Sans",sans-serif}
+  .btn-del{background:transparent;color:#b53a23;border:1.5px solid #e7b3a8}
+  .chipwrap{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .chip{border:1.5px solid var(--line);background:var(--card);border-radius:20px;padding:9px 13px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink)}
+  .chip.on{background:var(--oliva);color:#fff;border-color:var(--oliva)}
+  .field{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:13px;font-family:inherit;font-size:16px;margin-top:10px;background:var(--card);color:var(--ink)}
+  .dlg{flex:1 1 auto;overflow-y:auto;padding:16px 18px calc(24px + env(safe-area-inset-bottom))}
+  .wk-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .wk-day{width:58px;font-weight:700;font-size:13px;text-transform:capitalize}
+  .wk-bar{flex:1;height:10px;background:#efe3cc;border-radius:6px;overflow:hidden}
+  .wk-bar>span{display:block;height:100%;border-radius:6px}
+  .wk-g{width:52px;text-align:right;font-family:"Fraunces",serif;font-weight:700;font-size:14px}
+  .wk-sport{width:22px;text-align:center;font-size:15px}
+  .wk-sum{display:flex;gap:9px;margin:14px 0 4px}
+  .wk-sum div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center;font-size:11px;color:var(--ink2)}
+  .wk-sum b{display:block;font-family:"Fraunces",serif;font-size:20px;margin-top:2px;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -258,14 +282,19 @@
     <div class="pill"><div class="pl"><span class="ico">🍽️</span> Comidas</div><div class="pv" id="mealsDone">0/4</div></div>
   </div>
 
+  <div id="sportCard" class="sportcard"></div>
+
   <div class="notice" id="notifWrap">
     <button id="calBtn" class="primary">📅 Agregar recordatorios al calendario</button>
     <button id="notifBtn" class="secondary">🔔 Permitir notificaciones aquí</button>
     <div class="notehint">📱 En iPhone el calendario es lo más confiable: te avisa todos los días aunque la app esté cerrada.</div>
   </div>
 
+  <button id="weekBtn" class="weekbtn">📊 Ver balance semanal</button>
+
   <div class="secttl"><h2>El día</h2><span class="ln"></span></div>
   <div id="meals"></div>
+  <button id="addMealBtn" class="addmeal">➕ Agregar comida extra</button>
 
   <div class="reminder">
     <div class="rt">🌿 No lo olvides</div>
@@ -285,11 +314,11 @@
 </div>
 
 <div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
+<div class="ov" id="ov2"><div class="sheet" id="sheet2"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
 /* ====== Base de datos de alimentos (Porciones de Intercambio) ====== */
-/* mk(nombre, categoría, medida casera, gramos alimento, g proteína, g carbohidrato, extra) */
 const CAT = {
   prot:{label:"Proteína", col:"#d6492f"},
   carb:{label:"Carbohidrato", col:"#dd962a"},
@@ -303,7 +332,6 @@ function mk(n,cat,med,g,gp,gc,ex){
   return Object.assign(o, ex||{});
 }
 const FOODS = [
-  /* --- Lista 1: Proteínas --- */
   mk("Clara de huevo","prot","3 claras",100,11,1),
   mk("Huevo entero","prot","1 unidad",50,6,0),
   mk("Huevo de codorniz","prot","4 unidades",45,6,0),
@@ -364,7 +392,6 @@ const FOODS = [
   mk("Tostadas de edamame","prot","1/2 taza",25,6,4),
   mk("Scoop de proteína","prot","1 scoop",30,24,2,{p:2}),
   mk("Postre de proteína","prot","1 postre",0,15,8,{p:2}),
-  /* --- Legumbres (1 porción = 1 proteína + 1 carbohidrato) --- */
   mk("Arvejas","carb","1 1/4 taza",200,10,25,{p:1,c:1}),
   mk("Arvejas partidas","carb","3/4 taza",130,9,22,{p:1,c:1}),
   mk("Garbanzos","carb","3/4 taza",125,9,27,{p:1,c:1}),
@@ -379,7 +406,6 @@ const FOODS = [
   mk("Porotos negros","carb","3/4 taza",130,9,28,{p:1,c:1}),
   mk("Porotos pallares","carb","3/4 taza",140,9,30,{p:1,c:1}),
   mk("Porotos rojos","carb","3/4 taza",130,9,28,{p:1,c:1}),
-  /* --- Lista 2: Carbohidratos --- */
   mk("Marraqueta","carb","1/2 unidad",45,4,24),
   mk("Pan de masa madre","carb","1-2 rebanadas",75,6,38),
   mk("Pan integral casero","carb","1-2 rebanadas",60,5,28),
@@ -448,7 +474,6 @@ const FOODS = [
   mk("Manjar En Línea","carb","4 cdas",120,3,30),
   mk("Miel","carb","2 cdas",40,0,32),
   mk("Papel de arroz","carb","4 unidades",44,1,38),
-  /* --- Lista 4: Frutas (≈15 g carbo por porción) --- */
   mk("Arándanos","fru","3/4 taza",110,1,15),
   mk("Caqui","fru","1 unidad",90,0,15),
   mk("Castañas","fru","2-3 unidades",25,1,15),
@@ -493,7 +518,6 @@ const FOODS = [
   mk("Fruta liofilizada","fru","1 sobre",15,0,15),
   mk("Pouch de fruta (sin azúcar)","fru","1 unidad",90,0,15),
   mk("Pulpa de açaí","fru","5 cdas",60,1,15),
-  /* --- Lista 6: Aceites / Grasas --- */
   mk("Palta","ace","1/2 unidad",100,1,3),
   mk("Aceitunas","ace","15-30 unidades",120,1,3),
   mk("Chocolate 70% cacao","ace","2-3 cuadritos",35,3,12),
@@ -526,7 +550,6 @@ const FOODS = [
   mk("Queso de cabra","ace","2 rebanadas",50,11,1),
   mk("Queso amarillo (gouda, etc)","ace","2 rebanadas",50,13,1),
   mk("Quesos blandos (brie, camembert)","ace","1 trozo",45,9,1),
-  /* --- Lista 3: Verduras (libres) --- */
   mk("Verduras libres (ensalada, guiso, salteadas)","ver","libre",0,0,0),
   mk("Acelga","ver","libre",0,0,0), mk("Alcachofa","ver","libre",0,0,0), mk("Apio","ver","libre",0,0,0),
   mk("Berenjena","ver","libre",0,0,0), mk("Betarraga","ver","libre",0,0,0), mk("Brócoli","ver","libre",0,0,0),
@@ -555,19 +578,28 @@ const MEALS = [
 ];
 MEALS.forEach(m=>{ m.sugIds = (m.sug||[]).map(n=>NAME2ID[n]).filter(i=>i!=null); });
 
-const TARGET = {pPor:12, cPor:2, fr:1, ac:1};
+const PROT_GOAL = 140;   /* meta diaria de proteína en gramos (según InBody de Felipe) */
+const CARB_PORC = 2;     /* meta de porciones de carbohidrato (pauta) */
 const CIRC = 2 * Math.PI * 54;
+const SPORTS = ["Gym piernas","Gym brazos","Gym pecho/espalda","Gym full body","Pádel","Trote","Bicicleta","Fútbol","Natación","Caminata","Yoga","Otro"];
 
-/* ====== Estado / almacenamiento ====== */
+/* ====== Estado / almacenamiento (auto-reinicio diario por fecha) ====== */
 function todayKey(){
   const d=new Date();
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
-const STORE = "miPauta:"+todayKey();
+let curDate = todayKey();
+function storeKey(){ return "miPauta:"+curDate; }
+function blank(){ return {meals:{}, extra:[], sport:null}; }
+function load(){
+  try{ const raw=JSON.parse(localStorage.getItem(storeKey())); if(!raw) return blank();
+    if(!raw.meals) return {meals:raw, extra:[], sport:null}; /* formato antiguo */
+    return {meals:raw.meals||{}, extra:raw.extra||[], sport:raw.sport||null};
+  }catch(e){ return blank(); }
+}
 let data = load();
 let snoozed = {};
-function load(){ try{ return JSON.parse(localStorage.getItem(STORE)) || {}; }catch(e){ return {}; } }
-function save(){ localStorage.setItem(STORE, JSON.stringify(data)); }
+function save(){ localStorage.setItem(storeKey(), JSON.stringify(data)); }
 
 /* ====== Utilidades ====== */
 function fmtNum(n){ return Number.isInteger(n)? n : n.toFixed(1).replace(/\.0$/,""); }
@@ -576,27 +608,36 @@ function nowMins(){ const d=new Date(); return d.getHours()*60+d.getMinutes(); }
 function norm(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200); }
 
-/* ====== Totales del día ====== */
-function totals(){
-  let t={pPor:0,cPor:0,fr:0,ac:0,gp:0,gc:0};
-  for(const m of MEALS){
-    const log=data[m.id]; if(!log) continue;
+/* ====== Comidas (fijas + extra) ====== */
+function allMeals(){
+  const ex=(data.extra||[]).map(e=>({id:e.id,name:e.name,time:e.time,emoji:"🍴",color:"#7a6a4e",colorL:"#efe3cc",plan:"Comida adicional",sug:[],sugIds:[],custom:true}));
+  return MEALS.concat(ex).slice().sort((a,b)=>mins(a.time)-mins(b.time));
+}
+
+/* ====== Totales ====== */
+function dayTotals(dd){
+  let t={pPor:0,cPor:0,fr:0,ac:0,gp:0,gc:0,meals:0};
+  if(!dd||!dd.meals) return t;
+  for(const mid in dd.meals){
+    const log=dd.meals[mid]; if(!log||!Object.keys(log).length) continue;
+    t.meals++;
     for(const id in log){ const q=log[id],f=FOODS[id]; if(!q||!f)continue;
-      t.pPor+=(f.p||0)*q; t.cPor+=(f.c||0)*q; t.fr+=(f.fr||0)*q; t.ac+=(f.ac||0)*q;
-      t.gp+=(f.gp||0)*q; t.gc+=(f.gc||0)*q; }
+      t.pPor+=(f.p||0)*q; t.cPor+=(f.c||0)*q; t.fr+=(f.fr||0)*q; t.ac+=(f.ac||0)*q; t.gp+=(f.gp||0)*q; t.gc+=(f.gc||0)*q; }
   }
   return t;
 }
+function totals(){ return dayTotals(data); }
 
 /* ====== Render principal ====== */
 function statusOf(m){
-  if(data[m.id] && Object.keys(data[m.id]).length) return "done";
+  const log=data.meals[m.id];
+  if(log && Object.keys(log).length) return "done";
   const n=nowMins(), mt=mins(m.time);
   if(n>=mt) return "due";
   if(mt-n<=30) return "soon";
   return "pend";
 }
-function setArc(id,pct){ document.getElementById(id).style.strokeDashoffset = CIRC*(1-Math.min(1,pct)); }
+function setArc(id,pct){ document.getElementById(id).style.strokeDashoffset = CIRC*(1-Math.min(1,Math.max(0,pct))); }
 
 function render(){
   const d=new Date();
@@ -607,17 +648,20 @@ function render(){
   const t=totals();
   document.getElementById("pPor").textContent=Math.round(t.gp);
   document.getElementById("cPor").textContent=Math.round(t.gc);
-  document.getElementById("pGr").textContent=fmtNum(t.pPor)+" de 12 porciones";
-  document.getElementById("cGr").textContent=fmtNum(t.cPor)+" de 2 porciones";
-  setArc("pArc", t.pPor/TARGET.pPor);
-  setArc("cArc", t.cPor/TARGET.cPor);
+  document.getElementById("pGr").textContent="de "+PROT_GOAL+" g · "+fmtNum(t.pPor)+" porc";
+  document.getElementById("cGr").textContent=fmtNum(t.cPor)+" porciones (meta "+CARB_PORC+")";
+  setArc("pArc", t.gp/PROT_GOAL);
+  setArc("cArc", t.cPor/CARB_PORC);
   document.getElementById("frCount").textContent=fmtNum(t.fr)+"/1";
   document.getElementById("acCount").textContent=fmtNum(t.ac)+"/1";
-  const done=MEALS.filter(m=>data[m.id]&&Object.keys(data[m.id]).length).length;
-  document.getElementById("mealsDone").textContent=done+"/4";
+  const ms=allMeals();
+  const done=ms.filter(m=>data.meals[m.id]&&Object.keys(data.meals[m.id]).length).length;
+  document.getElementById("mealsDone").textContent=done+"/"+ms.length;
+
+  renderSport();
 
   const cont=document.getElementById("meals"); cont.innerHTML="";
-  for(const m of MEALS){
+  for(const m of ms){
     const st=statusOf(m);
     const el=document.createElement("div");
     el.className="meal "+(st==="due"?"due":"");
@@ -627,10 +671,10 @@ function render(){
               : st==="soon"?'<span class="status st-soon">Pronto</span>'
               :             '<span class="status st-pend">Programado</span>';
     let inner=`<div class="top"><div class="emoji">${m.emoji}</div>
-      <div class="ti"><div class="mname">${m.name}</div><div class="mtime">${m.time} h</div></div>${stHtml}</div>`;
+      <div class="ti"><div class="mname">${m.name}${m.custom?' <span class="tagx">extra</span>':''}</div><div class="mtime">${m.time} h</div></div>${stHtml}</div>`;
     inner+=`<div class="plan">${m.plan}</div>`;
     if(st==="done"){
-      const log=data[m.id]; let parts=[],lgp=0,lgc=0;
+      const log=data.meals[m.id]; let parts=[],lgp=0,lgc=0;
       for(const id in log){ const q=log[id],f=FOODS[id]; if(!q||!f)continue; parts.push(q+"× "+f.n); lgp+=(f.gp||0)*q; lgc+=(f.gc||0)*q; }
       inner+=`<div class="logged">${parts.join(" · ")}<br><span class="nums">${Math.round(lgp)} g proteína · ${Math.round(lgc)} g carbos</span></div>`;
       inner+=`<button class="btn btn-edit" data-open="${m.id}">Editar registro</button>`;
@@ -644,11 +688,110 @@ function render(){
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openMeal(b.dataset.open));
 }
 
-/* ====== Modal de registro (con buscador) ====== */
+/* ====== Deporte del día ====== */
+function renderSport(){
+  const el=document.getElementById("sportCard"); if(!el) return;
+  const s=data.sport;
+  if(s && s.length){
+    const rest = s.length===1 && s[0]==="Descanso";
+    el.innerHTML=`<div class="sc-done"><div><div class="sc-t">${rest?'😴':'🏋️'} Deporte de hoy</div><div class="sc-v">${s.join(" · ")}</div></div><button id="sportEdit" class="sc-btn">Cambiar</button></div>`;
+  } else {
+    el.innerHTML=`<button id="sportSet" class="sc-set">🏋️ ¿Hiciste deporte hoy?</button>`;
+  }
+  const a=document.getElementById("sportSet"); if(a) a.onclick=openSport;
+  const b=document.getElementById("sportEdit"); if(b) b.onclick=openSport;
+}
+function openSport(){
+  const sel=new Set(data.sport && data.sport[0]!=="Descanso" ? data.sport : []);
+  function chips(){ return SPORTS.map(o=>`<button class="chip ${sel.has(o)?'on':''}" data-sp="${o}">${o}</button>`).join(""); }
+  let html=`<div class="grab"></div><h2>🏋️ Deporte de hoy</h2><div class="when">Marca lo que hiciste (puedes elegir varios)</div>`;
+  html+=`<div class="chipwrap" id="spChips">${chips()}</div>`;
+  html+=`<button class="bigbtn ghost" id="spRest" style="margin-top:14px">😴 Hoy descansé</button>`;
+  html+=`<div class="row2" style="margin-top:12px"><button class="btn btn-save" id="spSave">Guardar</button><button class="btn btn-x" id="spCancel">Cancelar</button></div>`;
+  openSheet2(html);
+  document.getElementById("spChips").onclick=e=>{
+    const v=e.target.getAttribute("data-sp"); if(v==null) return;
+    if(v==="Otro"){ const nm=prompt("¿Qué deporte? (escríbelo)"); if(nm){ sel.add(nm.trim()); } }
+    else { if(sel.has(v)) sel.delete(v); else sel.add(v); }
+    document.getElementById("spChips").innerHTML=SPORTS.map(o=>`<button class="chip ${sel.has(o)?'on':''}" data-sp="${o}">${o}</button>`).join("")
+      + Array.from(sel).filter(x=>SPORTS.indexOf(x)<0).map(x=>`<button class="chip on" data-sp="${x}">${x}</button>`).join("");
+  };
+  document.getElementById("spRest").onclick=()=>{ data.sport=["Descanso"]; save(); closeSheet2(); render(); toast("Marcado: descanso 😴"); };
+  document.getElementById("spSave").onclick=()=>{ if(sel.size===0){ data.sport=null; } else { data.sport=Array.from(sel); } save(); closeSheet2(); render(); toast("Deporte guardado 🏋️"); };
+  document.getElementById("spCancel").onclick=closeSheet2;
+}
+
+/* ====== Comida extra ====== */
+function openAddMeal(){
+  let html=`<div class="grab"></div><h2>➕ Agregar comida</h2><div class="when">Una comida adicional a tus horarios (ej: Scoop AM)</div>`;
+  html+=`<input class="field" id="amName" placeholder="Nombre (ej: Scoop AM)" autocomplete="off">`;
+  html+=`<input class="field" id="amTime" type="time" value="08:00">`;
+  html+=`<div class="row2" style="margin-top:14px"><button class="btn btn-save" id="amSave">Agregar comida</button><button class="btn btn-x" id="amCancel">Cancelar</button></div>`;
+  openSheet2(html);
+  document.getElementById("amSave").onclick=()=>{
+    let nm=(document.getElementById("amName").value||"").trim(); if(!nm) nm="Comida extra";
+    let tm=document.getElementById("amTime").value||"08:00";
+    const id="x"+String(Date.now());
+    data.extra=data.extra||[]; data.extra.push({id:id,name:nm,time:tm});
+    save(); closeSheet2(); render(); toast("Comida agregada ➕");
+  };
+  document.getElementById("amCancel").onclick=closeSheet2;
+}
+
+/* ====== Balance semanal ====== */
+function allDays(){
+  const out=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i); const m=/^miPauta:(\d{4}-\d{2}-\d{2})$/.exec(k); if(!m) continue;
+    let dd; try{ dd=JSON.parse(localStorage.getItem(k)); }catch(e){ continue; }
+    if(dd && !dd.meals) dd={meals:dd,extra:[],sport:null};
+    out.push({date:m[1], dd:dd});
+  }
+  out.sort((a,b)=> a.date<b.date?1:-1);
+  return out;
+}
+function openWeek(){
+  const days=allDays().slice(0,7);
+  const dn=["dom","lun","mar","mié","jue","vie","sáb"];
+  let html=`<div class="grab"></div><h2>📊 Balance semanal</h2><div class="when">Tus últimos ${days.length||0} días · meta ${PROT_GOAL} g de proteína</div>`;
+  if(!days.length){
+    html+=`<div class="empty" style="padding:30px 10px">Aún no hay días registrados. Registra comidas y vuelve aquí.</div>`;
+    html+=`<button class="btn btn-x" id="wkClose" style="margin-top:8px">Cerrar</button>`;
+    openSheet2(html); document.getElementById("wkClose").onclick=closeSheet2; return;
+  }
+  let sumG=0, met=0, sportDays=0;
+  let rows="";
+  days.forEach(o=>{
+    const t=dayTotals(o.dd); const g=Math.round(t.gp); sumG+=g; if(g>=PROT_GOAL) met++;
+    const sp=o.dd.sport||[]; const trained = sp.length && sp[0]!=="Descanso"; if(trained) sportDays++;
+    const ic = trained?"🏋️":(sp.length&&sp[0]==="Descanso"?"😴":"·");
+    const dt=new Date(o.date+"T12:00:00"); const lbl=dn[dt.getDay()]+" "+dt.getDate();
+    const pct=Math.min(100, g/PROT_GOAL*100);
+    const col = g>=PROT_GOAL ? "var(--oliva)" : "var(--tomate)";
+    rows+=`<div class="wk-row"><div class="wk-day">${lbl}</div><div class="wk-bar"><span style="width:${pct}%;background:${col}"></span></div><div class="wk-g">${g} g</div><div class="wk-sport" title="${sp.join(', ')}">${ic}</div></div>`;
+  });
+  const avg=Math.round(sumG/days.length);
+  html+=`<div class="wk-sum">
+    <div>Promedio<b>${avg} g</b><span style="font-size:11px;color:var(--ink2)">proteína/día</span></div>
+    <div>Cumpliste<b>${met}/${days.length}</b><span style="font-size:11px;color:var(--ink2)">días la meta</span></div>
+    <div>Deporte<b>${sportDays}</b><span style="font-size:11px;color:var(--ink2)">días</span></div>
+  </div>`;
+  html+=`<div style="margin-top:6px">${rows}</div>`;
+  html+=`<button class="btn btn-x" id="wkClose" style="margin-top:16px">Cerrar</button>`;
+  openSheet2(html);
+  document.getElementById("wkClose").onclick=closeSheet2;
+}
+
+/* ====== Sheet secundario (deporte / comida / semana) ====== */
+function openSheet2(html){ document.getElementById("sheet2").innerHTML='<div class="dlg">'+html+'</div>'; document.getElementById("ov2").classList.add("show"); }
+function closeSheet2(){ document.getElementById("ov2").classList.remove("show"); }
+document.getElementById("ov2").onclick=e=>{ if(e.target.id==="ov2") closeSheet2(); };
+
+/* ====== Modal de registro de comida (con buscador) ====== */
 let cur=null, draft={}, curQuery="";
 function openMeal(id, forced){
-  cur=MEALS.find(m=>m.id===id);
-  draft=Object.assign({}, data[id]||{});
+  cur=allMeals().find(m=>m.id===id); if(!cur) return;
+  draft=Object.assign({}, data.meals[id]||{});
   curQuery="";
   const sh=document.getElementById("sheet");
   sh.style.setProperty("--mc",cur.color);
@@ -663,7 +806,9 @@ function openMeal(id, forced){
     <div class="row2" style="margin-top:11px">
       ${forced?'<button class="btn btn-snooze" id="snoozeB" style="margin-top:0">Posponer 10 min</button>':''}
       <button class="btn btn-x" id="closeB" style="margin-top:0">Cancelar</button>
-    </div></div>`;
+    </div>
+    ${cur.custom?'<button class="btn btn-del" id="delB" style="margin-top:10px">🗑 Eliminar esta comida</button>':''}
+    </div>`;
   sh.innerHTML=html; sh.scrollTop=0;
   document.getElementById("ov").classList.add("show");
   const inp=document.getElementById("foodSearch");
@@ -675,6 +820,9 @@ function openMeal(id, forced){
   document.getElementById("saveB").onclick=saveMeal;
   document.getElementById("closeB").onclick=closeModal;
   if(forced) document.getElementById("snoozeB").onclick=()=>{ snoozed[cur.id]=Date.now()+6e5; closeModal(); toast("Pospuesto 10 minutos ⏰"); };
+  const del=document.getElementById("delB"); if(del) del.onclick=()=>{
+    if(confirm("¿Eliminar la comida \""+cur.name+"\"?")){ data.extra=(data.extra||[]).filter(x=>x.id!==cur.id); delete data.meals[cur.id]; save(); closeModal(); render(); toast("Comida eliminada"); }
+  };
   renderList(); updateLive();
 }
 function foodRow(id){
@@ -701,10 +849,10 @@ function renderList(){
   } else {
     const sug=cur.sugIds||[];
     ids=sel.concat(sug.filter(i=>sel.indexOf(i)<0));
-    label="⭐ Sugeridos para "+cur.name.toLowerCase()+" · o busca arriba ☝️";
+    label = (cur.custom && !ids.length) ? "Busca tu alimento arriba ☝️" : "⭐ Sugeridos para "+cur.name.toLowerCase()+" · o busca arriba ☝️";
   }
   hd.textContent=label;
-  box.innerHTML = ids.length? ids.map(foodRow).join("") : '<div class="empty">Sin resultados. Prueba con otro nombre.</div>';
+  box.innerHTML = ids.length? ids.map(foodRow).join("") : '<div class="empty">Escribe en el buscador para encontrar tu alimento.</div>';
 }
 function step(id,d){
   draft[id]=Math.max(0,(draft[id]||0)+d); if(!draft[id])delete draft[id];
@@ -723,24 +871,25 @@ function updateLive(){
 }
 function saveMeal(){
   if(Object.keys(draft).length===0){ toast("Marca al menos un alimento 🍴"); return; }
-  data[cur.id]=Object.assign({},draft); delete snoozed[cur.id];
+  data.meals[cur.id]=Object.assign({},draft); delete snoozed[cur.id];
   save(); closeModal(); render(); toast("¡Registrado! ✅");
 }
 function closeModal(){ document.getElementById("ov").classList.remove("show"); cur=null; }
 document.getElementById("ov").onclick=e=>{ if(e.target.id==="ov" && !document.getElementById("sheet").querySelector(".force")) closeModal(); };
 
-/* ====== Recordatorios en el Calendario (.ics) — confiable en iPhone ====== */
+/* ====== Recordatorios en el Calendario (.ics) ====== */
 function makeICS(){
   const pad=n=>String(n).padStart(2,"0");
   const d=new Date(); const today=d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
   const NL=String.fromCharCode(13,10);
-  const items=[["110000","Colación (11:00)"],["130000","Almuerzo (13:00)"],["180000","Colación (18:00)"],["200000","Cena (20:00)"]];
+  const ms=allMeals();
   let L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//MiPauta//ES","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
-  items.forEach((m,i)=>{
+  ms.forEach((m,i)=>{
+    const hm=m.time.replace(":","");
     L.push("BEGIN:VEVENT","UID:mipauta-"+i+"-"+today+"@mipauta","DTSTAMP:"+today+"T000000",
-      "DTSTART:"+today+"T"+m[0],"DURATION:PT15M","RRULE:FREQ=DAILY",
-      "SUMMARY:Mi Pauta · "+m[1],"DESCRIPTION:Registra lo que comiste y revisa tu proteina del dia.",
-      "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+m[1],"TRIGGER:PT0S","END:VALARM","END:VEVENT");
+      "DTSTART:"+today+"T"+hm+"00","DURATION:PT15M","RRULE:FREQ=DAILY",
+      "SUMMARY:Mi Pauta · "+m.name+" ("+m.time+")","DESCRIPTION:Registra lo que comiste y revisa tu proteina.",
+      "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+m.name,"TRIGGER:PT0S","END:VALARM","END:VEVENT");
   });
   L.push("END:VCALENDAR");
   return L.join(NL);
@@ -752,39 +901,43 @@ function addCalendar(){
     const a=document.createElement("a"); a.href=url; a.download="MiPauta-recordatorios.ics";
     document.body.appendChild(a); a.click();
     setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); },1500);
-    setTimeout(()=>alert("📅 Te generé 4 recordatorios diarios: 11:00, 13:00, 18:00 y 20:00.\n\nÁbrelos con la app Calendario y toca \"Agregar todos\". Así te avisará todos los días, aunque la app esté cerrada.\n\nSi se descargó el archivo .ics, ábrelo desde Archivos o Descargas para agregarlo al calendario."),250);
+    setTimeout(()=>alert("📅 Te generé recordatorios diarios para tus horarios de comida.\n\nÁbrelos con la app Calendario y toca \"Agregar todos\". Así te avisará todos los días, aunque la app esté cerrada.\n\nSi se descargó el archivo .ics, ábrelo desde Archivos o Descargas. (Si agregas comidas nuevas, vuelve a tocar este botón.)"),250);
   }catch(e){ alert("No se pudo generar el calendario: "+e); }
 }
-
-/* ====== Notificaciones web (Android/PC; limitadas en iPhone) ====== */
-function setupNotifBtn(){
-  const cal=document.getElementById("calBtn");
-  if(cal) cal.onclick=addCalendar;
+function setupButtons(){
+  const cal=document.getElementById("calBtn"); if(cal) cal.onclick=addCalendar;
+  const wk=document.getElementById("weekBtn"); if(wk) wk.onclick=openWeek;
+  const am=document.getElementById("addMealBtn"); if(am) am.onclick=openAddMeal;
   const nb=document.getElementById("notifBtn");
   if(nb) nb.onclick=()=>{
     if(!("Notification" in window)){ alert("Este dispositivo no permite notificaciones web (común en iPhone). Usa el botón 📅 Agregar recordatorios al calendario, que sí funciona."); return; }
     Notification.requestPermission().then(p=>{
       if(p==="granted"){ toast("Notificaciones activadas 🔔"); try{new Notification("¡Listo!",{body:"Te avisaré en cada horario (con la app abierta)."});}catch(e){} }
-      else if(p==="denied"){ alert("Las notificaciones están bloqueadas para este sitio.\n\nEn iPhone, las notificaciones web solo funcionan si agregas la app a la pantalla de inicio, y aun así son limitadas. Te recomiendo el botón 📅 del calendario."); }
+      else if(p==="denied"){ alert("Las notificaciones están bloqueadas para este sitio.\n\nEn iPhone solo funcionan si agregas la app a la pantalla de inicio, y aun así son limitadas. Te recomiendo el botón 📅 del calendario."); }
       else { toast("No se concedió el permiso"); }
     });
   };
 }
-setupNotifBtn();
+setupButtons();
 
-/* ====== Avisos dentro de la app ====== */
+/* ====== Avisos dentro de la app + reinicio diario ====== */
 let notified={};
+function checkRollover(){
+  const tk=todayKey();
+  if(tk!==curDate){ curDate=tk; data=load(); notified={}; snoozed={}; }
+}
 function checkAlerts(){
+  checkRollover();
   render();
   const n=nowMins();
-  for(const m of MEALS){
+  for(const m of allMeals()){
     const mt=mins(m.time);
-    if(data[m.id] && Object.keys(data[m.id]).length) continue;
+    if(data.meals[m.id] && Object.keys(data.meals[m.id]).length) continue;
     const sn=snoozed[m.id]||0;
     if(n>=mt && n<mt+180 && Date.now()>=sn){
       if(!notified[m.id]){
         sysNotify(m); notified[m.id]=true;
-        if(!document.getElementById("ov").classList.contains("show")) openMeal(m.id,true);
+        if(!document.getElementById("ov").classList.contains("show") && !document.getElementById("ov2").classList.contains("show")) openMeal(m.id,true);
       } else if(sn && Date.now()>=sn && !document.getElementById("ov").classList.contains("show")){
         sysNotify(m); openMeal(m.id,true); snoozed[m.id]=0;
       }
@@ -799,10 +952,10 @@ function sysNotify(m){
 
 /* ====== Pie ====== */
 document.getElementById("resetBtn").onclick=()=>{
-  if(confirm("¿Borrar los registros de HOY y empezar de nuevo?")){ data={};notified={};snoozed={};save();render();toast("Día reiniciado ↺"); }
+  if(confirm("¿Borrar los registros de HOY y empezar de nuevo? (El historial de días anteriores se conserva)")){ data=blank();notified={};snoozed={};save();render();toast("Día reiniciado ↺"); }
 };
 document.getElementById("howBtn").onclick=()=>{
-  alert("📲 Para usarla como app en el teléfono:\n\n• iPhone (Safari): Compartir → 'Agregar a inicio'.\n• Android (Chrome): menú ⋮ → 'Agregar a pantalla principal'.\n\nPara los avisos, usa el botón 📅 'Agregar recordatorios al calendario': funciona aunque la app esté cerrada.");
+  alert("📲 Para usarla como app en el teléfono:\n\n• iPhone (Safari): Compartir → 'Agregar a inicio'.\n• Android (Chrome): menú ⋮ → 'Agregar a pantalla principal'.\n\nEl día se reinicia solo cada jornada y se guarda el historial. Para avisos usa el botón 📅 del calendario.");
 };
 
 /* ====== Inicio ====== */

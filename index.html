@@ -79,7 +79,8 @@
     --shadow:0 10px 26px -12px rgba(94,66,32,.45);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0}
+  html,body{margin:0;padding:0;touch-action:manipulation}
+  button,.food,.ofr,.chip{touch-action:manipulation}
   body{
     font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     color:var(--ink);line-height:1.45;
@@ -212,6 +213,10 @@
   .listhd{font-family:"Fraunces",serif;font-size:13.5px;font-weight:700;margin:16px 2px 9px;color:var(--ink2)}
   .newfood{display:block;width:100%;margin-top:9px;padding:11px;border:1.5px dashed #cdab7a;border-radius:13px;background:#fbf3e3;color:#9a6a16;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
   .newfood:active{background:#f6e8cf}
+  .chips{display:flex;gap:7px;overflow-x:auto;margin-top:12px;padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chips .chip{flex:0 0 auto;border:1.5px solid var(--line);border-radius:30px;background:var(--card);color:var(--ink2);font-family:inherit;font-size:13px;font-weight:700;padding:7px 13px;cursor:pointer;white-space:nowrap}
+  .chips .chip.on{border-color:var(--oliva);background:var(--oliva);color:#fff}
   .mine{display:inline-block;margin-left:6px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#b5651d;background:#f6e3cf;border-radius:6px;padding:1px 6px;vertical-align:middle}
   .delc{flex-shrink:0;width:34px;height:34px;border:1px solid var(--line);border-radius:11px;background:var(--paper);font-size:14px;cursor:pointer;line-height:1}
   .delc:active{background:var(--paper2)}
@@ -698,6 +703,32 @@ const FOODS = [
   mk("Maní salado (puñado)","dulce","1 puñado",30,8,6),
   mk("Mantecol","dulce","1 unidad",30,4,15),
   mk("Miel / mermelada (1 cda)","dulce","1 cucharada",20,0,15),
+  /* ===== Carnes y platos al plato (parrilla / almuerzo) ===== */
+  mk("Brisket / brisquet (porción)","deli","1 porción",200,36,2),
+  mk("Milanesa / escalopa de carne","deli","1 unidad",180,30,20),
+  mk("Milanesa de pollo","deli","1 unidad",180,32,18),
+  mk("Milanesa napolitana","deli","1 unidad",250,36,25),
+  mk("Churrasco al plato (carne a la plancha)","deli","1 porción",200,38,0),
+  mk("Bistec a lo pobre","deli","1 plato",450,40,55),
+  mk("Salchicha / vienesa","deli","1 unidad",50,6,2),
+  mk("Salchicha alemana / bratwurst","deli","1 unidad",90,12,3),
+  mk("Longaniza / chorizo","deli","1 unidad",80,12,2),
+  mk("Prieta / morcilla","deli","1 unidad",100,10,8),
+  mk("Arrollado huaso","deli","1 rebanada",80,12,3),
+  mk("Costillar de vacuno (porción)","deli","1 porción",200,34,0),
+  mk("Pollo al jugo (presa)","deli","1 presa",150,28,3),
+  mk("Pescado a la plancha (filete)","deli","1 filete",150,30,0),
+  mk("Salmón grillado","deli","1 porción",150,31,0),
+  mk("Filete / lomo a la plancha","deli","1 porción",180,36,0),
+  mk("Cordero asado (porción)","deli","1 porción",200,32,0),
+  mk("Cerdo a la parrilla (porción)","deli","1 porción",180,32,0),
+  mk("Choripán","deli","1 unidad",180,16,35),
+  mk("Hamburguesa casera (solo la carne)","deli","1 medallón",120,22,1),
+  mk("Huevos revueltos (2)","deli","2 huevos",100,12,1),
+  mk("Tortilla / omelette de verduras","deli","1 porción",150,14,4),
+  mk("Pure de papas (porción)","deli","1 porción",200,4,30),
+  mk("Arroz blanco (porción restaurante)","deli","1 porción",200,4,55),
+  mk("Ensalada mixta (lechuga/tomate)","deli","1 plato",150,2,8),
 ];
 const NAME2ID = {}; FOODS.forEach((f,i)=>NAME2ID[f.n]=i);
 
@@ -935,11 +966,11 @@ function closeSheet2(){ document.getElementById("ov2").classList.remove("show");
 document.getElementById("ov2").onclick=e=>{ if(e.target.id==="ov2") closeSheet2(); };
 
 /* ====== Modal de registro de comida (con buscador) ====== */
-let cur=null, draft={}, curQuery="";
+let cur=null, draft={}, curQuery="", curCat=null;
 function openMeal(id, forced){
   cur=allMeals().find(m=>m.id===id); if(!cur) return;
   draft=Object.assign({}, data.meals[id]||{});
-  curQuery="";
+  curQuery=""; curCat=null;
   const sh=document.getElementById("sheet");
   sh.style.setProperty("--mc",cur.color);
   let head=`<div class="grab"></div><h2>${cur.emoji} ${cur.name}</h2><div class="when">${cur.time} h · ${cur.plan}</div>`;
@@ -947,6 +978,7 @@ function openMeal(id, forced){
   head+=`<div class="livewrap" id="livewrap"></div>`;
   head+=`<input class="search" id="foodSearch" placeholder="🔎 Buscar alimento (pollo, pizza, chocolate…)" autocomplete="off">`;
   head+=`<button class="newfood" id="newFoodBtn">🌐 Buscar otra comida o producto (delivery, dulces, snacks…)</button>`;
+  head+=`<div class="chips" id="catChips"></div>`;
   head+=`<div class="listhd" id="listHd"></div>`;
   let html=`<div class="shead">${head}</div><div class="sbody"><div id="foodList"></div></div>`;
   html+=`<div class="savebar">
@@ -967,6 +999,13 @@ function openMeal(id, forced){
     else if(inc!=null) step(+inc,1); else if(dec!=null) step(+dec,-1);
   };
   document.getElementById("newFoodBtn").onclick=openFinder;
+  document.getElementById("catChips").onclick=e=>{
+    const b=e.target.closest("[data-cat]"); if(!b) return;
+    curCat=b.getAttribute("data-cat")||null;
+    curQuery=""; const s=document.getElementById("foodSearch"); if(s) s.value="";
+    renderList();
+    const box=document.querySelector(".sbody"); if(box) box.scrollTop=0;
+  };
   document.getElementById("saveB").onclick=saveMeal;
   document.getElementById("closeB").onclick=closeModal;
   if(forced) document.getElementById("snoozeB").onclick=()=>{ snoozed[cur.id]=Date.now()+6e5; closeModal(); toast("Pospuesto 10 minutos ⏰"); };
@@ -990,24 +1029,41 @@ function foodRow(id){
     <div class="stepper"><button data-dec="${id}">−</button><span class="qv">${qy}</span><button data-inc="${id}">+</button></div>
   </div>`;
 }
+const CHIP_DEFS=[["","⭐ Sugeridos"],["prot","🍗 Proteína"],["carb","🍚 Carbohidratos"],["ver","🥦 Verduras"],["fru","🍎 Frutas"],["ace","🫒 Aceites/grasas"],["deli","🍔 Comida/Delivery"],["dulce","🍫 Dulces/Snacks"],["mine","💾 Mis guardados"]];
+function renderChips(){
+  return CHIP_DEFS.map(d=>`<button class="chip ${((curCat||"")===d[0])?"on":""}" data-cat="${d[0]}">${d[1]}</button>`).join("");
+}
 function renderList(){
-  const hd=document.getElementById("listHd"), box=document.getElementById("foodList");
+  const hd=document.getElementById("listHd"), box=document.getElementById("foodList"), chips=document.getElementById("catChips");
   if(!box) return;
+  const searching=!!curQuery;
+  const lw=document.getElementById("livewrap"); if(lw) lw.style.display=searching?"none":"";
+  if(chips){ chips.style.display=searching?"none":""; if(!searching) chips.innerHTML=renderChips(); }
   const sel=Object.keys(draft).map(Number).filter(id=>draft[id]>0);
   let ids, label;
-  if(curQuery){
+  if(searching){
     const q=norm(curQuery);
     const matches=FOODS.map((f,i)=>i).filter(i=>norm(FOODS[i].n).includes(q))
       .concat(CUSTOM.filter(f=>norm(f.n).includes(q)).map(f=>f.id));
-    ids=sel.filter(i=>matches.indexOf(i)>=0).concat(matches.filter(i=>sel.indexOf(i)<0)).slice(0,40);
+    ids=sel.filter(i=>matches.indexOf(i)>=0).concat(matches.filter(i=>sel.indexOf(i)<0)).slice(0,60);
     label="Resultados ("+matches.length+")";
+  } else if(curCat){
+    let catIds;
+    if(curCat==="mine") catIds=CUSTOM.map(f=>f.id);
+    else catIds=FOODS.map((f,i)=>i).filter(i=>FOODS[i].cat===curCat);
+    ids=sel.filter(i=>catIds.indexOf(i)>=0).concat(catIds.filter(i=>sel.indexOf(i)<0));
+    const nm=curCat==="mine"?"Mis guardados":(CAT[curCat]?CAT[curCat].label:curCat);
+    label=nm+" ("+catIds.length+")";
   } else {
     const sug=cur.sugIds||[];
     ids=sel.concat(sug.filter(i=>sel.indexOf(i)<0));
-    label = (cur.custom && !ids.length) ? "Busca tu alimento arriba ☝️" : "⭐ Sugeridos para "+cur.name.toLowerCase()+" · o busca arriba ☝️";
+    label = (cur.custom && !ids.length) ? "Elige una categoría o busca ☝️" : "⭐ Sugeridos para "+cur.name.toLowerCase();
   }
   hd.textContent=label;
-  box.innerHTML = ids.length? ids.map(foodRow).join("") : '<div class="empty">Escribe en el buscador para encontrar tu alimento.</div>';
+  const empty = searching ? "No encontré ese alimento aquí. Prueba el botón 🌐 de arriba o revisa las categorías."
+    : (curCat==="mine" ? "Aún no tienes alimentos guardados. Créalos con el botón 🌐 de arriba."
+    : "Toca una categoría arriba o escribe en el buscador.");
+  box.innerHTML = ids.length? ids.map(foodRow).join("") : '<div class="empty">'+empty+'</div>';
 }
 function step(id,d){
   draft[id]=Math.max(0,(draft[id]||0)+d); if(!draft[id])delete draft[id];
